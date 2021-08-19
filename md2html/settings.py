@@ -1,0 +1,8 @@
+# -*- coding: utf-8 -*-
+
+MYSQL_HOSTS = '127.0.0.1'
+MYSQL_USER = 'root'
+MYSQL_PASSWORD = '123456'
+MYSQL_PORT = 3306
+MYSQL_DB = 'wordpress'
+MYSQL_CHARSET='UTF8'
