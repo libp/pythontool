@@ -27,7 +27,7 @@ def dirs(path):
     :return:
     """
     parents = os.listdir(path)
-    ignore_path = ['.git','.gitattributes','R&D.md','README.md','SUMMARY.md']
+    ignore_path = ['.git','.gitattributes','R&D.md','README.md','SUMMARY.md','目录.md']
     for parent in parents:    
         if (parent in ignore_path):
             logging.debug("忽略文件： " + parent)
@@ -95,5 +95,5 @@ def spiltPath():
     print(name)
 
 if __name__ == '__main__':
-    path = 'C:/Users/peng/git/RenZhengfei/'
+    path = 'C:/Users/peng/git/MaoZeDongAnthology'
     dirs(path)
