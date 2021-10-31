@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from typing import List
@@ -31,7 +30,6 @@ class Solution:
                 right = mid
             else:
                 left= mid + 1
-            
         return left
     
     def searchInsert(self, nums: List[int], target: int) -> int:
