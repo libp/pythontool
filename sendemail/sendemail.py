@@ -1,34 +1,57 @@
-#发送多种类型的邮件
-import smtplib
+import configparser
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-  
-msg_from = 'test@qq.com' # 发送方邮箱
-passwd = 'xxx'  #就是上面的授权码
-  
-to= ['test@qq.com'] #接受方邮箱
-  
-#设置邮件内容
-#MIMEMultipart类可以放任何内容
-msg = MIMEMultipart()
-conntent="这个是字符串"
-#把内容加进去
-msg.attach(MIMEText(conntent,'plain','utf-8'))
-  
-#设置邮件主题
-msg['Subject']="这个是邮件主题"
-  
-#发送方信息
-msg['From']=msg_from
-  
-#开始发送
-  
-#通过SSL方式发送，服务器地址和端口
-s = smtplib.SMTP_SSL("smtp.qq.com", 465)
-# 登录邮箱
-s.login(msg_from, passwd)
+from email.header import Header
+import smtplib
+import logging
+import sys
 
+# 配置日志信息 输出到控制台
+logging.basicConfig(level=logging.INFO,
+                format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                datefmt='%a, %d %b %Y %H:%M:%S',
+                stream=sys.stdout)
 
-#开始发送
-s.sendmail(msg_from,to,msg.as_string())
-print("邮件发送成功")
+def getConf():
+    config = configparser.ConfigParser()
+    config.read('sendemail/local.conf')
+    return config
+
+def sendEmail(mail_msg,subject):
+    
+    config = getConf()
+    strFrom = config.get("email", "sender")
+    strTo = config.get("email", "receivers")
+    code = config.get("email", "code")
+
+    message = MIMEText(mail_msg, 'html', 'utf-8')
+    message['Subject'] = Header(subject, 'utf-8')
+    message['To'] = strTo;
+    message['From'] = strFrom;
+
+    #ssl登录
+    smtp = smtplib.SMTP_SSL('smtp.qq.com')
+    smtp.connect('smtp.qq.com')
+    smtp.login(strFrom, code)
+
+    try:
+        smtp.sendmail(strFrom,strTo,message.as_string())
+    finally:
+        smtp.close
+
+def getContext():
+    mail_msg = """
+    <ul type='circle'>
+    <li>hello python3</li>
+    </ul>
+    """
+    subject = '测试基于python3的QQ邮件发送功能'
+    return mail_msg,subject
+
+if __name__ == '__main__':
+
+    logging.info("begin send email")
+    mail_msg,subject = getContext()
+    sendEmail(mail_msg,subject)
+    logging.info("end send email")
+
+    
