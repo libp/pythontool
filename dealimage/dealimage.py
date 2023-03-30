@@ -13,7 +13,7 @@ import os
 import cv2
 import logging
 from  threading import Thread
-
+from pyexiv2 import Image
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -65,7 +65,26 @@ def get_new_size(infile):
     img = cv2.imread(infile)
     height = img.shape[0]
     width = img.shape[1]
-    phone_px = 500
+    print(width,height)
+
+    # 部分图片中，含有的元数据信息宽度和高度，与图片实际的宽度和高度不一致。
+    # cwebp转换图片的时候，默认使用了元数据，会自动图片旋转，导致图片的纵横比缩放失效，图片失真
+    metadata = Image(infile).read_exif()
+    if(metadata):
+        # print(metadata)
+        metawidth = int(metadata.get("Exif.Image.ImageWidth") or metadata.get("Exif.Photo.PixelXDimension") or height)
+        metaheight = int(metadata.get("Exif.Image.ImageLength") or metadata.get("Exif.Photo.PixelYDimension") or width)
+        Orientation = int(metadata.get("Exif.Image.Orientation") or metadata.get("Exif.Photo.Orientation") or 1)
+        ThumbnailOrientation = int(metadata.get("Exif.Thumbnail.Orientation") or 1)
+        # ThumbnailOrientation表示缩略图旋转，只有图片被旋转过的才调整长宽
+        if(ThumbnailOrientation!=1):
+            pass
+        elif( Orientation!=1 or height!=metaheight):
+            height = metaheight
+            width = metawidth
+    else:
+        print("no picture metadata")
+    phone_px = 1000
     scale = float(phone_px) / width
     if width <= phone_px:
         return width,height
@@ -79,7 +98,8 @@ def convert_img_type(infile,):
     :param infile:
     :return:
     """
-    encoder_path = "C:/Users/peng/Downloads/libwebp-1.0.0-windows-x64/bin/cwebp.exe"
+    # encoder_path = "C:/Users/peng/Downloads/libwebp-1.0.0-windows-x64/bin/cwebp.exe"
+    encoder_path = "C:/Users/peng/Downloads/libwebp-1.3.0-windows-x64/bin/cwebp.exe"
 
     dir = '/'.join(infile.split('/')[0:-1])
     imgname = infile.split('/')[-1].split('.')[0]
@@ -89,8 +109,9 @@ def convert_img_type(infile,):
         os.mkdir(output_path)
 
     new_size = get_new_size(infile)
+    print(new_size[0],new_size[1])
 
-    command = encoder_path + " -q 80 -resize " + str(new_size[0]) + " " + str(new_size[1]) + " " +infile + " -o "+output_path + imgname + ".webp"
+    command = encoder_path + " -quiet -q 80 -resize " + str(new_size[0]) + " " + str(new_size[1]) + " " +infile + " -o "+output_path + imgname + ".webp"
     logging.debug(command)
     os.system(command)
 
@@ -110,7 +131,6 @@ def dirs(path):
             logging.info(filepath)
             # convert_img_type(filepath)
             t = Thread(target=convert_img_type, args=(filepath,))
-            # t = Thread(target=convert_img_type_newwebpdir, args=(filepath,))
             t.start()
             t.join()
 
@@ -118,7 +138,8 @@ def dirs(path):
 
 
 if __name__ == '__main__':
-    path = "C:/Users/peng/Desktop/split"
+    path = "C:/Users/peng/Desktop/test/"
+
     # cutImage(path)
     # rename_img(path)
     dirs(path)
