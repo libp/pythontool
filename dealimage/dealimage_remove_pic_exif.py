@@ -13,48 +13,11 @@ import os
 import cv2
 import logging
 from  threading import Thread
-from pyexiv2 import Image
+import piexif
 
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',datefmt='%a, %d %b %Y %H:%M:%S',)
-
-def cutImage(path):
-    listdir = os.listdir(path)
-    
-    newdir = os.path.join(path, 'split')    # make a new dir in dirpath.
-    if(os.path.exists(newdir) == False):
-        os.mkdir(newdir)
-        
-    for i in listdir:
-        if i.split('.')[1] == "jpg":	
-            filepath = os.path.join(path, i)
-            filename = i.split('.')[0]
-            leftpath = os.path.join(newdir, filename) + "_left.jpg"
-            rightpath = os.path.join(newdir, filename) + "_right.jpg"
-
-            img = cv2.imread(filepath)
-            [h, w] = img.shape[:2]
-            logging.debug("文件路径和高宽： " + filepath, (h, w))
-
-            limg = img[:, :int(w/2), :]
-            rimg = img[:, int(w/2+1):, :]
-
-            cv2.imwrite(leftpath, limg)
-            cv2.imwrite(rightpath, rimg)
-
-def rename_img(path):
-    """
-    对图片排序后改名
-    :param path:
-    :return:
-    """
-    imgs = os.listdir(path)
-    for i,fi in enumerate(imgs):
-        old_name=os.path.join(path,fi)
-        new_name=os.path.join(path,str(i+2)+'.jpg')
-        print(new_name)
-        os.rename(old_name,new_name)
 
 def get_new_size(infile):
     """
@@ -67,23 +30,10 @@ def get_new_size(infile):
     width = img.shape[1]
     print(width,height)
 
-    # 部分图片中，含有的元数据信息宽度和高度，与图片实际的宽度和高度不一致。
-    # cwebp转换图片的时候，默认使用了元数据，会自动图片旋转，导致图片的纵横比缩放失效，图片失真
-    metadata = Image(infile).read_exif()
-    if(metadata):
-        # print(metadata)
-        metawidth = int(metadata.get("Exif.Image.ImageWidth") or metadata.get("Exif.Photo.PixelXDimension") or height)
-        metaheight = int(metadata.get("Exif.Image.ImageLength") or metadata.get("Exif.Photo.PixelYDimension") or width)
-        Orientation = int(metadata.get("Exif.Image.Orientation") or metadata.get("Exif.Photo.Orientation") or 1)
-        ThumbnailOrientation = int(metadata.get("Exif.Thumbnail.Orientation") or 1)
-        # ThumbnailOrientation表示缩略图旋转，只有图片被旋转过的才调整长宽
-        if(ThumbnailOrientation!=1):
-            pass
-        elif( Orientation!=1 or height!=metaheight):
-            height = metaheight
-            width = metawidth
-    else:
-        print("no picture metadata")
+    # remove pic exif 
+    # 图片纵横比失真。这个方式不行！
+    piexif.remove(infile)
+
     phone_px = 2000
     scale = float(phone_px) / width
     if width <= phone_px:
@@ -143,6 +93,4 @@ if __name__ == '__main__':
     # path = "C:/Users/peng/Desktop/test/1518638008875028482"
     path = "C:/Users/peng/Desktop/test/1518627669293506561"
 
-    # cutImage(path)
-    # rename_img(path)
     dirs(path)
